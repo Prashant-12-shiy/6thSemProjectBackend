@@ -4,6 +4,7 @@ const Student = require("../models/Student.model");
 const Attendance = require("../models/Attendance.model");
 const Grade = require("../models/Grade.model");
 const Course = require("../models/Course.model");
+const Task = require("../models/Task.model")
 const User = require("../models/User")
 
 // Get all students in a class
@@ -189,4 +190,58 @@ exports.updateGrade = async (req, res) => {
   }
 };
 
+exports.addTask = async (req,res) => {
+  const {taskContent, assignedTo, status} = req.body;
+
+  try {
+    const assignedDoc = await Class.findOne({name: assignedTo}); 
+
+    const task = new Task({
+      taskContent: taskContent,
+      status,
+      assignedTo: assignedDoc._id,
+      teacher: req.user._id
+    })
+
+    await task.save();
+    res.status(201).json({message: "Task Added Successfully", task});
+
+
+  } catch (error) {
+    res.status(500).json({message: "Error Adding Task", error: error.message || error})
+  }
+} 
+
+exports.assignedTask = async (req,res) => {
+  try {
+    const task = await Task.find({teacher: req.user._id}).populate('assignedTo', 'name');
+
+    res.status(201).json({message: "Task Fetch Successfully", task});
+  } catch (error) {
+    res.status(500).json({message: "Error Fetching Task", error: error.message || error})
+  }
+}
+
+exports.updateTask = async (req,res) => {
+  const {taskId} = req.params
+  const {taskContent, assignedTo, status} = req.body;
+  try {
+
+    const assignedDoc = await Class.findOne({name: assignedTo}); 
+
+
+    const task = await Task.findById(taskId);
+
+    if(taskContent) task.taskContent = taskContent;
+    if(assignedTo) task.assignedTo = assignedDoc._id;
+    if(status) task.status = status;
+
+    await task.save();
+    res
+      .status(200)
+      .json({ message: "Task updated successfully", task });
+  } catch (error) {
+    res.status(500).json({message: "Error Updating Task", error: error.message || error})
+  }
+}
 // Other Teacher(Admin)-specific actions can be added here...

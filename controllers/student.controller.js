@@ -3,7 +3,7 @@ const Student = require("../models/Student.model");
 const Attendance = require("../models/Attendance.model");
 const Grade = require("../models/Grade.model");
 const Course = require("../models/Course.model");
-const { populate } = require("dotenv");
+const Task = require("../models/Task.model")
 
 // Get student's grades
 exports.getGrades = async (req, res) => {
@@ -90,5 +90,23 @@ exports.getCourses = async (req, res) => {
       .json({ message: "Error fetching courses", error: error.message });
   }
 };
+
+exports.getTask = async (req,res) => {
+  try {
+    const task = await Task.find({assignedTo: req.user.class});
+    console.log(req.user.class);
+    
+    if(!task) {
+      return res.status(404).json({message: "There is not task for you"});
+    }
+
+    res.status(201).json({message: "Task Fetch SuccessFully", task});
+
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching Task", error: error.message || error});
+  }
+}
 
 // Other Student-specific actions can be added here...
