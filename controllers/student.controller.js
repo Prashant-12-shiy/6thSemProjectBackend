@@ -12,9 +12,7 @@ exports.getGrades = async (req, res) => {
       return res.status(400).json({ message: "Student not found in request" });
     }
 
-    const user = req.user._id;
-
-    const student = await Student.findOne({ user: user._id });
+    const student = await Student.findById(req.user._id );
 
     if (!student) {
       return res.status(400).json({ message: "Student not found" });
@@ -44,10 +42,8 @@ exports.getAttendance = async (req, res) => {
     if (!req.user || !req.user._id) {
       return res.status(400).json({ message: "Student not found in request" });
     }
-
-    const user = req.user;
-
-    const student = await Student.findOne({ user: user._id });
+;
+    const student = await Student.findById(req.user._id);
 
     const attendance = await Attendance.find({ student: student._id });
 
@@ -69,9 +65,7 @@ exports.getCourses = async (req, res) => {
       return res.status(400).json({ message: "Student not found in request" });
     }
 
-    const user = req.user;
-
-    const student = await Student.findOne({ user: user._id });
+    const student = await Student.findById(req.user._id );
 
     // Handle case where student is not found
     if (!student) {

@@ -13,7 +13,7 @@ const { protect, authorize } = require("../middlewares/authMiddleware");
 
 // Apply middleware to protect routes and restrict access to Teacher/Admin roles
 router.use(protect);
-router.use(authorize("Admin", "Teacher"));
+router.use(authorize("Teacher"));
 
 // Teacher(Admin) specific routes
 router.get("/class/:classId/students", getClassStudents);

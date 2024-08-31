@@ -2,6 +2,8 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User'); // Assuming your User model is named User
+const Student = require('../models/Student.model');
+const Teacher = require("../models/Teacher.model")
 
 const comparePassword = async (password, hashedPassword) => {
     try {
@@ -114,19 +116,19 @@ exports.loginUser = async (req, res) => {
 
     try {
         // Find the user by email
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email }) || 
+                     await Student.findOne({ email }) || 
+                     await Teacher.findOne({ email });
 
         if (!user) {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
 
-        // Check if the password matches
-    
-        if (password === user.password) {
+        // Check if the password matches        
+        if (password !== user.password) {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
  
-        
 
         // Create and sign a JWT token
         const token = jwt.sign(
@@ -146,7 +148,8 @@ exports.loginUser = async (req, res) => {
             }
         });
     } catch (error) {
-        res.status(500).json({ message: 'Server error' });
+        console.error("Error occurred during login:", error.message);
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
 

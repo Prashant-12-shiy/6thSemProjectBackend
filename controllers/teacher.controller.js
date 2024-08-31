@@ -11,13 +11,11 @@ exports.getClassStudents = async (req, res) => {
   const { classId } = req.params;
 
   try {
-    const students = await Student.find({ class: classId }).populate(
-      "user",
-      "name email"
-    );
+    const students = await Student.find({ class: classId })
     res.status(200).json(students);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching students", error });
+    console.error("Error fetching Students", error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
@@ -27,6 +25,9 @@ exports.markAttendance = async (req, res) => {
 
   try {
     const studentDetail = await Student.findOne({ name: studentName });
+    if(!studentDetail) {
+      return res.status(404).json({message: "Student Not Found"})
+    }
     const studentId = studentDetail._id;
 
     const attendance = new Attendance({
@@ -40,7 +41,7 @@ exports.markAttendance = async (req, res) => {
       .status(201)
       .json({ message: "Attendance marked successfully", attendance });
   } catch (error) {
-    res.status(500).json({ message: "Error marking attendance", error });
+    res.status(500).json({ message: "Error marking attendance", error: error.message || error});
   }
 };
 
@@ -55,14 +56,7 @@ exports.getClassAttendance = async (req, res) => {
       query.date = { $gte: new Date(startDate), $lte: new Date(endDate) };
     }
 
-    const attendanceRecords = await Attendance.find(query).populate({
-      path: "student",
-      select: "user",
-      populate: {
-        path: "user",
-        select: "name email",
-      },
-    });
+    const attendanceRecords = await Attendance.find(query).populate("student", 'name');
 
     res.status(200).json(attendanceRecords);
   } catch (error) {
@@ -77,15 +71,8 @@ exports.addGrade = async (req, res) => {
     const { studentName, courseName, term, grade, remarks } = req.body;
   
     try {
-     // Find the user by name
-     const user = await User.findOne({ name: studentName });
-
-     if (!user) {
-       return res.status(400).json({ message: "User not found" });
-     }
- 
      // Find the student associated with this user
-     const student = await Student.findOne({ user: user._id });
+     const student = await Student.findOne({ name: studentName });
  
      if (!student) {
        return res.status(400).json({ message: "Student not found" });
@@ -139,10 +126,7 @@ exports.addGrade = async (req, res) => {
   exports.getStudentGrade = async (req,res) => {
     const {studentId} = req.params
     try {
-        const studentGrades = await Grade.find({student: studentId}).populate({
-            path: 'student',
-            populate: { path: 'user', select: 'name' }
-          })
+        const studentGrades = await Grade.find({student: studentId}).populate('student', 'name')
           .populate('course', 'name');
     
 
@@ -152,7 +136,7 @@ exports.addGrade = async (req, res) => {
 
       const response = studentGrades.map((grade) => ({
         _id: grade._id,
-        studentName: grade.student.user.name,
+        studentName: grade.student.name,
         courseName: grade.course.name,
         termGrades: grade.termGrades,
         createdAt: grade.createdAt,
