@@ -12,6 +12,8 @@ const comparePassword = async (password, hashedPassword) => {
       }
   
       const isMatch = await bcrypt.compare(password, hashedPassword);
+      console.log(isMatch);
+        
       return isMatch;
     } catch (error) {
       throw new Error("Error comparing passwords: " + error.message);
@@ -77,16 +79,15 @@ exports.loginSuperAdmin = async (req,res) => {
         if (user.role !== 'SuperAdmin') {
             return res.status(403).json({ message: 'Access denied. SuperAdmin only.' });
         }
-
-
-
+        console.log(user.password);
+        
         // Check if the password matches
-        // const isMatch = await comparePassword(password, user.password);
+        const isMatch = await comparePassword(password, user.password);
        
 
-        // if (!isMatch) {
-        //     return res.status(400).json({ message: 'Invalid email or password' });
-        // }
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Invalid email or password' });
+        }
 
         // Create and sign a JWT token
         const token = jwt.sign(

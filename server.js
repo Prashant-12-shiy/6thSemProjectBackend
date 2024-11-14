@@ -2,6 +2,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db'); 
+const cors = require('cors')
 const superAdminRoutes = require('./routes/superadminRoutes');
 const teacherRoutes = require('./routes/teacherRoutes');
 const studentRoutes = require('./routes/studentRoutes');
@@ -10,6 +11,16 @@ const authRoutes = require('./routes/authRoutes')
 dotenv.config();
 
 const app = express();
+
+const allowedOrigins = [
+    'http://localhost:3000', // For local development
+  ];
+  
+  app.use(cors({
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Add any methods you want to allow
+    credentials: true // Include this if you want to allow credentials (cookies, authorization headers)
+  }));
 
 connectDB();
 

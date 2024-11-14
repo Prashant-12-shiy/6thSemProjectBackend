@@ -6,6 +6,7 @@ const Grade = require("../models/Grade.model");
 const Course = require("../models/Course.model");
 const Task = require("../models/Task.model")
 const User = require("../models/User")
+const Event = require("../models/Event.model");
 
 // Get all students in a class
 exports.getClassStudents = async (req, res) => {
@@ -244,4 +245,21 @@ exports.updateTask = async (req,res) => {
     res.status(500).json({message: "Error Updating Task", error: error.message || error})
   }
 }
+
+
+exports.getEvent = async (req, res) => {
+  try {
+    // Get the current date
+    const currentDate = new Date();
+
+    // Find only upcoming events (date is in the future)
+    const upcomingEvents = await Event.find({ date: { $gt: currentDate } }).sort({ date: 1 });
+
+    return res.status(200).json(upcomingEvents);
+  } catch (error) {
+    console.error("Error getting events:", error); // Log for debugging
+    return res.status(500).json({ message: "Error getting events", error: error.message });
+  }
+};
+
 // Other Teacher(Admin)-specific actions can be added here...

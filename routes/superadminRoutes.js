@@ -13,6 +13,12 @@ const {
   getAllCourse,
   createStudent,
   createTeacher,
+  getAllClasses,
+  deleteClass,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+  getEvent
 } = require("../controllers/superAdmin.controller");
 const { protect, authorize } = require("../middlewares/authMiddleware");
 
@@ -29,11 +35,16 @@ router.get("/getAllStudent", getAllStudent);
 router.get("/getAllTeacher", getAllTeacher);
 router.post("/createCourses", createCourses);
 router.get("/getAllCourse", getAllCourse);
+router.delete("/deleteClass/:id", deleteClass);
 router.post("/createClass", createClass);
+router.get("/getAllClass", getAllClasses)
 router.post("/updateUser/:userId", updateUser);
 router.post("/updateStudent/:studentId", updateStudent);
 router.post("/updateTeacher/:teacherId", updateTeacher);
-
+router.post("/createEvent", createEvent);
+router.patch("/updateEvent/:id", updateEvent );
+router.delete("/deleteEvent/:id", deleteEvent);
+router.get("/getAllEvent", getEvent)
 // Additional SuperAdmin routes can be added here...
 
 module.exports = router;

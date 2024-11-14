@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 // Define an array of allowed course names including subjects common in Nepali schools
 const courseNames = [
-    "Mathematics",
+    "Math",
     "Physics",
     "Chemistry",
     "Biology",
@@ -42,7 +42,6 @@ const courseSchema = mongoose.Schema(
         teacher: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Teacher',
-            required: true,
         },
         credits: {
             type: Number,
