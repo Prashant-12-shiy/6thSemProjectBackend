@@ -14,6 +14,7 @@ exports.createStudent = async (req, res) => {
     password,
     role,
     rollNumber,
+    profilePicture,
     className,
     guardianName,
     guardianContact,
@@ -48,6 +49,7 @@ exports.createStudent = async (req, res) => {
       email: email,
       password: password,
       role: role,
+      profilePicture,
       class: classDoc._id,
       rollNumber,
       guardianName,
@@ -162,6 +164,21 @@ exports.getAllTeacher = async (req, res) => {
   }
 };
 
+
+exports.getStudent = async (req, res) => {
+  if (req.user.role !== "SuperAdmin") {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
+  try {
+    const id = req.params.id;
+    const users = await Student.findById(id).populate("class", "name");
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching users", error });
+  }
+};
+
 exports.updateUser = async (req, res) => {
   const { userId } = req.params;
   const { name, email, password } = req.body;
@@ -261,7 +278,6 @@ exports.updateTeacher = async (req, res) => {
     let classDoc;
     if (classInCharge) {
       classDoc = await Class.findOne({ name: classInCharge });
-      console.log(classDoc);
 
       if (!classDoc) {
         return res.status(404).json({ message: "Class not found" });
@@ -283,7 +299,15 @@ exports.updateTeacher = async (req, res) => {
     if (classDoc) teacher.classInCharge = classDoc._id;
     if (course) teacher.course = course._id;
 
+    
+
     await teacher.save();
+
+    if (course) {
+      course.teacher = teacher._id;
+      await course.save();
+    }
+    
 
     res.status(200).json({ message: "Teacher updated successfully", teacher });
   } catch (error) {
@@ -375,6 +399,51 @@ exports.createCourses = async (req, res) => {
     res
       .status(500)
       .json({ message: "Error creating courses", error: error.message });
+  }
+};
+
+exports.updateCouse = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { name, code, description, credits, className } = req.body;
+
+    if (!className) {
+      return res.status(400).json({ message: "Class name is required" });
+    }
+
+    const classDetail = await Class.findOne({ name: className });
+    if (!classDetail) {
+      return res
+        .status(404)
+        .json({ message: `Class with name ${className} not found` });
+    }
+
+    const course = await Course.findById(id);
+    if (!course) {
+      return res.status(400).json({
+        message: `Course doesnot exists in class ${className}`,
+      });
+    }
+
+    const updatedcourse = await Course.findByIdAndUpdate(
+      id,
+      {
+        ...(name && { name }),
+        ...(code && { code }),
+        ...(credits && { credits }),
+        ...(description && { description }),
+        classes: classDetail._id,
+      },
+      { new: true }
+    );
+
+    return res
+      .status(200)
+      .json({ message: "Course updated Successfully", updatedcourse });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Error updating courses", error: error.message });
   }
 };
 
@@ -488,7 +557,7 @@ exports.createEvent = async (req, res) => {
   }
 };
 
-exports.getEvent = async (req,res) => {
+exports.getEvent = async (req, res) => {
   if (req.user.role !== "SuperAdmin") {
     return res.status(403).json({ message: "Access denied" });
   }
@@ -499,16 +568,15 @@ exports.getEvent = async (req,res) => {
   } catch (error) {
     return res.status(500).json({ message: "Error geting event", error });
   }
-}
+};
 
-
-exports.updateEvent = async(req,res) => {
+exports.updateEvent = async (req, res) => {
   if (req.user.role !== "SuperAdmin") {
     return res.status(403).json({ message: "Access denied" });
   }
   try {
     const { name, date, venue, description } = req.body;
-    const eventId = req.params.id; 
+    const eventId = req.params.id;
 
     const event = await Event.findById(eventId);
     if (!event) {
@@ -518,20 +586,21 @@ exports.updateEvent = async(req,res) => {
     const updatedEvent = await Event.findByIdAndUpdate(
       eventId,
       {
-        ...(name && {name}),
-        ...(date && {date}),
+        ...(name && { name }),
+        ...(date && { date }),
         ...(venue && { venue }),
-        ...(description && { description })
+        ...(description && { description }),
       },
-      { new: true } 
-    )
-    
-    return res.status(200).json({ message: "Event updated successfully", updatedEvent });
+      { new: true }
+    );
+
+    return res
+      .status(200)
+      .json({ message: "Event updated successfully", updatedEvent });
   } catch (error) {
     return res.status(500).json({ message: "Error creating event", error });
   }
-} 
-
+};
 
 exports.deleteEvent = async (req, res) => {
   if (req.user.role !== "SuperAdmin") {

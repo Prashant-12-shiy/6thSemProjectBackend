@@ -4,6 +4,7 @@ const router = express.Router();
 const {
   createUser,
   getAllStudent,
+  getStudent,
   getAllTeacher,
   createCourses,
   updateUser,
@@ -11,6 +12,7 @@ const {
   updateStudent,
   updateTeacher,
   getAllCourse,
+  updateCouse,
   createStudent,
   createTeacher,
   getAllClasses,
@@ -32,9 +34,11 @@ router.use(authorize("SuperAdmin"));
 router.post("/createStudent", createStudent);
 router.post("/createTeacher", createTeacher);
 router.get("/getAllStudent", getAllStudent);
+router.get("/getStudent/:id", getStudent);
 router.get("/getAllTeacher", getAllTeacher);
 router.post("/createCourses", createCourses);
 router.get("/getAllCourse", getAllCourse);
+router.patch("/updateCouse/:id", updateCouse)
 router.delete("/deleteClass/:id", deleteClass);
 router.post("/createClass", createClass);
 router.get("/getAllClass", getAllClasses)

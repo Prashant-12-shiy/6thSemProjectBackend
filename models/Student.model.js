@@ -26,6 +26,10 @@ const studentSchema = mongoose.Schema(
             required: true,
             unique: true,
         },
+        profilePicture:  {
+            type: String,
+            default: "https://res.cloudinary.com/dkfh9sou7/image/upload/v1731670372/3bed97102466519a0f0ecda60d0f6ec0.jpg"
+        },
         class: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Class',
