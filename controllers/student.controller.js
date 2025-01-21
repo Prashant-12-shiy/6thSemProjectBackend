@@ -1,9 +1,45 @@
 // controllers/studentController.js
+const jwt = require('jsonwebtoken');
 const Student = require("../models/Student.model");
 const Attendance = require("../models/Attendance.model");
 const Grade = require("../models/Grade.model");
 const Course = require("../models/Course.model");
 const Task = require("../models/Task.model")
+
+exports.getMyDetails = async (req,res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({ message: "No token provided" });
+    }
+
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET); // Ensure JWT_SECRET is set in your environment
+    const userId = decodedToken.id;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID not found in token" });
+    }
+
+    // Fetch the user details using the user ID
+    const user = await Student.findById(userId).populate("class", "name");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Send the user details in the response
+    res.status(200).json({
+      success: true,
+      message: "User details fetched successfully",
+      data: user,
+    });
+
+
+  } catch (error) {
+    console.error("Error fetching Students", error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+}
 
 // Get student's grades
 exports.getGrades = async (req, res) => {
@@ -23,11 +59,11 @@ exports.getGrades = async (req, res) => {
       select: "name", // Select the course name
       populate: {
         path: "teacher",
-        select: "user",
-        populate: {
-          path: "user",
-          select: "name",
-        },
+        select: "name",
+        // populate: {
+        //   path: "user",
+        //   select: "name",
+        // },
       },
     });
     res.status(200).json(grades);
@@ -75,8 +111,7 @@ exports.getCourses = async (req, res) => {
     // Find all courses associated with the student's class
     const courses = await Course.find({ classes: student.class._id }).populate({
       path: "teacher",
-      select: "user",
-      populate: { path: "user", select: "name" },
+      select: "name"
     }).populate({
         path: "classes",
         select: " name"
@@ -93,8 +128,17 @@ exports.getCourses = async (req, res) => {
 
 exports.getTask = async (req,res) => {
   try {
-    const task = await Task.find({assignedTo: req.user.class});
-    console.log(req.user.class);
+    const task = await Task.find({ assignedTo: req.user.class })
+    .populate({
+      path: 'teacher', // Populate teacher field
+      select: 'course',
+      populate: {
+        path: 'course', // Populate course field inside teacher
+        select: 'name',
+        model: 'Course', // Specify the model for the course
+      },
+    });
+
     
     if(!task) {
       return res.status(404).json({message: "There is not task for you"});

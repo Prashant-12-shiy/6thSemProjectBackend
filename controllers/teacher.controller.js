@@ -1,19 +1,77 @@
 // controllers/teacherController.js
+const jwt = require('jsonwebtoken');
 const Class = require("../models/Class.model");
 const Student = require("../models/Student.model");
 const Attendance = require("../models/Attendance.model");
 const Grade = require("../models/Grade.model");
 const Course = require("../models/Course.model");
 const Task = require("../models/Task.model")
-const User = require("../models/User")
+const User = require("../models/User");
 const Event = require("../models/Event.model");
+const Teacher = require('../models/Teacher.model');
 
 // Get all students in a class
+
+exports.getMyDetails = async (req,res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({ message: "No token provided" });
+    }
+
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET); // Ensure JWT_SECRET is set in your environment
+    const userId = decodedToken.id;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID not found in token" });
+    }
+
+    // Fetch the user details using the user ID
+    const user = await Teacher.findById(userId).populate("course", "name");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Send the user details in the response
+    res.status(200).json({
+      success: true,
+      message: "User details fetched successfully",
+      data: user,
+    });
+
+
+  } catch (error) {
+    console.error("Error fetching Students", error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+}
+
 exports.getClassStudents = async (req, res) => {
-  const { classId } = req.params;
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
 
   try {
-    const students = await Student.find({ class: classId })
+    // Decode the token to get the userID
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET); // Ensure JWT_SECRET is set in your environment
+    const userId = decodedToken.id;
+
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID not found in token' });
+    }
+
+    // Find the user and check their classInCharge
+    const user = await Teacher.findById(userId).select('classInCharge');
+    if (!user || !user.classInCharge) {
+      return res.status(404).json({ message: 'User or class in charge not found' });
+    }
+
+    // Fetch students for the user's classInCharge
+    const students = await Student.find({ class: user.classInCharge });
+
     res.status(200).json(students);
   } catch (error) {
     console.error("Error fetching Students", error.message);
@@ -21,22 +79,85 @@ exports.getClassStudents = async (req, res) => {
   }
 };
 
+
+exports.getStudentById = async (req, res) => {
+  const { id } = req.params; // Assuming studentId is in the URL params
+
+  try {
+    // Fetch student details
+    const student = await Student.findById(id);
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    // Fetch attendance for the student
+    const attendance = await Attendance.find({ student: id });
+
+    // Fetch grades for the student
+    const grades = await Grade.find({ student: id }).populate("course", "name");
+
+    // Combine all the data
+    const studentDetails = {
+      student,
+      attendance,
+      grades
+    };
+
+    // Return the combined data
+    res.status(200).json(studentDetails);
+  } catch (error) {
+    console.error('Error fetching student data:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 // Mark attendance for a class
 exports.markAttendance = async (req, res) => {
   const { studentName, status, date } = req.body;
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
 
   try {
+    // Decode the token to get the userID
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET); // Ensure JWT_SECRET is set in your environment
+    const userId = decodedToken.id;
+
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID not found in token' });
+    }
+
+    // Find the user and check their classInCharge
+    const user = await Teacher.findById(userId).select('classInCharge');
+    if (!user || !user.classInCharge) {
+      return res.status(404).json({ message: 'User or class in charge not found' });
+    }
+
     const studentDetail = await Student.findOne({ name: studentName });
     if(!studentDetail) {
       return res.status(404).json({message: "Student Not Found"})
     }
     const studentId = studentDetail._id;
 
+    const existingAttendance = await Attendance.findOne({
+      student: studentId,
+      date: new Date(date).toISOString(), // Ensure the date is consistent
+      class: user.classInCharge,
+    });
+
+    if (existingAttendance) {
+      return res.status(400).json({
+        message: "Attendance already marked for this student on the given date",
+      });
+    }
+
     const attendance = new Attendance({
       student: studentId,
       status,
       date,
-      class: req.params.classId,
+      class: user.classInCharge,
     });
     await attendance.save();
     res
@@ -46,6 +167,7 @@ exports.markAttendance = async (req, res) => {
     res.status(500).json({ message: "Error marking attendance", error: error.message || error});
   }
 };
+
 
 exports.getClassAttendance = async (req, res) => {
   const { classId } = req.params;
@@ -70,7 +192,7 @@ exports.getClassAttendance = async (req, res) => {
 
 // Add a grade for a specific term
 exports.addGrade = async (req, res) => {
-    const { studentName, courseName, term, grade, remarks } = req.body;
+    const { studentName, courseName, term, grade, remarks, mark} = req.body;
   
     try {
      // Find the student associated with this user
@@ -104,7 +226,7 @@ exports.addGrade = async (req, res) => {
         }
   
         // Add the new term grade
-        studentGrade.termGrades.push({ term, grade, remarks });
+        studentGrade.termGrades.push({ term, grade, remarks, mark });
         await studentGrade.save();
   
         res.status(201).json({ message: "Grade added successfully", studentGrade });
@@ -113,7 +235,7 @@ exports.addGrade = async (req, res) => {
         studentGrade = new Grade({
           student: student._id,
           course: course._id,
-          termGrades: [{ term, grade, remarks }],
+          termGrades: [{ term, grade, remarks, mark }],
         });
   
         await studentGrade.save();
@@ -154,7 +276,7 @@ exports.addGrade = async (req, res) => {
 
 // Update grade for a specific term
 exports.updateGrade = async (req, res) => {
-  const { studentId, courseId, term, grade, remarks } = req.body;
+  const { studentId, courseId, term, grade, remarks , mark} = req.body;
 
   try {
     let studentGrade = await Grade.findOne({
@@ -178,8 +300,9 @@ exports.updateGrade = async (req, res) => {
     }
 
     // Update the term grade
-    termGrade.grade = grade;
-    termGrade.remarks = remarks;
+   if(grade) termGrade.grade = grade;
+   if(remarks) termGrade.remarks = remarks;
+   if(mark) termGrade.mark = mark;
 
     await studentGrade.save();
 

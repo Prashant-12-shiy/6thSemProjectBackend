@@ -164,7 +164,6 @@ exports.getAllTeacher = async (req, res) => {
   }
 };
 
-
 exports.getStudent = async (req, res) => {
   if (req.user.role !== "SuperAdmin") {
     return res.status(403).json({ message: "Access denied" });
@@ -299,15 +298,12 @@ exports.updateTeacher = async (req, res) => {
     if (classDoc) teacher.classInCharge = classDoc._id;
     if (course) teacher.course = course._id;
 
-    
-
     await teacher.save();
 
     if (course) {
       course.teacher = teacher._id;
       await course.save();
     }
-    
 
     res.status(200).json({ message: "Teacher updated successfully", teacher });
   } catch (error) {
@@ -453,15 +449,13 @@ exports.getAllCourse = async (req, res) => {
   }
 
   try {
-    const courses = await Course.find({}).populate({
-      path: "teacher",
-      populate: {
-        path: "user",
-        select: "name",
-      },
-    });
-    res.status(200).json(courses);
-  } catch (error) {}
+    const courses = await Course.find({}).populate("teacher", "name").populate("classes", "name");
+    return res.status(200).json(courses);
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Error geting courses", error: error.message });
+  }
 };
 
 exports.createClass = async (req, res) => {

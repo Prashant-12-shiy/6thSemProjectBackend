@@ -12,6 +12,10 @@ const termGradeSchema = mongoose.Schema(
       type: String,
       required: true,
     },
+    mark: {
+      type: Number,
+      required: true
+    },
     remarks: {
       type: String,
     },

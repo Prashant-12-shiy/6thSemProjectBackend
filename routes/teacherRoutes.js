@@ -2,6 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const {
+  getMyDetails,
   getClassStudents,
   markAttendance,
   getClassAttendance,
@@ -9,6 +10,7 @@ const {
   updateGrade,
   getStudentGrade,
   addTask,
+  getStudentById,
   assignedTask,
   updateTask,
   getEvent
@@ -20,11 +22,13 @@ router.use(protect);
 router.use(authorize("Teacher"));
 
 // Teacher(Admin) specific routes
-router.get("/class/:classId/students", getClassStudents);
-router.post("/class/:classId/attendance", markAttendance);
+router.get("/getMyDetails", getMyDetails)
+router.get("/class/students", getClassStudents);
+router.get("/students/:id", getStudentById)
+router.post("/class/attendance", markAttendance);
 router.get("/attendance/class/:classId", getClassAttendance);
 router.post("/addGrade", addGrade);
-router.post("/updateGrade", updateGrade);
+router.patch("/updateGrade", updateGrade);
 router.get('/getStudentGrade/:studentId', getStudentGrade);
 router.post('/addTask', addTask);
 router.get('/assignedTask', assignedTask)

@@ -15,6 +15,8 @@ const TaskSchema = mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Teacher",
   },
+}, {
+  timestamps: true,
 });
 
 const Task = mongoose.model("Task", TaskSchema);

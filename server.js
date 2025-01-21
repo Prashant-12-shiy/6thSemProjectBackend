@@ -13,7 +13,8 @@ dotenv.config();
 const app = express();
 
 const allowedOrigins = [
-    'http://localhost:3000', // For local development
+    'http://localhost:3000',
+    'http://localhost:3001', // For local development
   ];
   
   app.use(cors({
