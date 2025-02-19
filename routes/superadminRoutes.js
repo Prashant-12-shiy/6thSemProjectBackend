@@ -12,6 +12,7 @@ const {
   updateStudent,
   updateTeacher,
   getAllCourse,
+  getCourseBySuperAdmin,
   updateCouse,
   createStudent,
   createTeacher,
@@ -38,7 +39,8 @@ router.get("/getStudent/:id", getStudent);
 router.get("/getAllTeacher", getAllTeacher);
 router.post("/createCourses", createCourses);
 router.get("/getAllCourse", getAllCourse);
-router.patch("/updateCouse/:id", updateCouse)
+router.get("/getCourse/:courseId", getCourseBySuperAdmin)
+router.patch("/updateCourse/:id", updateCouse)
 router.delete("/deleteClass/:id", deleteClass);
 router.post("/createClass", createClass);
 router.get("/getAllClass", getAllClasses)

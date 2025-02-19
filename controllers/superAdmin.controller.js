@@ -458,6 +458,27 @@ exports.getAllCourse = async (req, res) => {
   }
 };
 
+
+exports.getCourseBySuperAdmin = async (req, res) => {
+  if (req.user.role !== "SuperAdmin") {
+    return res.status(403).json({ message: "Access denied" });
+  }
+  const id = req.params.courseId;
+  try {
+    const course = await Course.findById(id).populate("teacher", "name").populate("classes", "name");
+    if (!course) {
+      return res.status(400).json({
+        message: `Course doesnot exists in class ${className}`,
+      });
+    }
+    return res.status(200).json(course);
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Error geting course", error: error.message });
+  }
+};
+
 exports.createClass = async (req, res) => {
   const { name, section, students, teacherName } = req.body;
 
