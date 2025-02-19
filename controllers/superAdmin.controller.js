@@ -5,6 +5,7 @@ const Student = require("../models/Student.model");
 const Course = require("../models/Course.model");
 const Class = require("../models/Class.model");
 const Event = require("../models/Event.model");
+const Notice = require("../models/Notice.model");
 
 // Create a new user (Admin, Teacher, Student)
 exports.createStudent = async (req, res) => {
@@ -634,6 +635,98 @@ exports.deleteEvent = async (req, res) => {
       .json({ message: "Event deleted successfully", event });
   } catch (error) {
     return res.status(500).json({ message: "Error deleting event", error });
+  }
+};
+// Other SuperAdmin-specific actions can be added here...
+
+
+exports.createNotice = async (req, res) => {
+  if (req.user.role !== "SuperAdmin") {
+    return res.status(403).json({ message: "Access denied" });
+  }
+  try {
+    const { name, date, description } = req.body;
+
+    const existingNotice = await Notice.findOne({ name });
+    if (existingNotice) {
+      return res.status(404).json({ message: "Notice Already exists" });
+    }
+
+    const notice = new Notice({
+      name,
+      date,
+      description,
+    });
+    await notice.save();
+
+    return res.status(201).json({ message: "New notice created", notice });
+  } catch (error) {
+    console.error("Error creating notice:", error); // Log the error details
+    return res.status(500).json({ message: "Error creating notice", error });
+  }
+};
+
+exports.getNotice = async (req, res) => {
+  if (req.user.role !== "SuperAdmin") {
+    return res.status(403).json({ message: "Access denied" });
+  }
+  try {
+    const notice = await Notice.find({});
+
+    return res.status(200).json(notice);
+  } catch (error) {
+    return res.status(500).json({ message: "Error geting notice", error });
+  }
+};
+
+exports.updateNotice = async (req, res) => {
+  if (req.user.role !== "SuperAdmin") {
+    return res.status(403).json({ message: "Access denied" });
+  }
+  try {
+    const { name, date, description } = req.body;
+    const noticeId = req.params.id;
+
+    const notice = await Event.findById(noticeId);
+    if (!notice) {
+      return res.status(404).json({ message: "Notice not found" });
+    }
+
+    const updatedNotice = await Event.findByIdAndUpdate(
+      noticeId,
+      {
+        ...(name && { name }),
+        ...(date && { date }),
+        ...(description && { description }),
+      },
+      { new: true }
+    );
+
+    return res
+      .status(200)
+      .json({ message: "Notice updated successfully", updatedNotice });
+  } catch (error) {
+    return res.status(500).json({ message: "Error creating notice", error });
+  }
+};
+
+exports.deleteNotice = async (req, res) => {
+  if (req.user.role !== "SuperAdmin") {
+    return res.status(403).json({ message: "Access denied" });
+  }
+  try {
+    const id = req.params.id;
+    const notice = await Notice.findByIdAndDelete(id);
+
+    if (!notice) {
+      return res.status(404).json({ message: "Notice not found" });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "Notice deleted successfully", notice });
+  } catch (error) {
+    return res.status(500).json({ message: "Error deleting notice", error });
   }
 };
 // Other SuperAdmin-specific actions can be added here...

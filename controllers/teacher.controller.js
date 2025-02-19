@@ -9,6 +9,7 @@ const Task = require("../models/Task.model")
 const User = require("../models/User");
 const Event = require("../models/Event.model");
 const Teacher = require('../models/Teacher.model');
+const Notice = require('../models/Notice.model');
 
 // Get all students in a class
 
@@ -46,6 +47,7 @@ exports.getMyDetails = async (req,res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 }
+
 
 exports.getClassStudents = async (req, res) => {
   const token = req.headers.authorization?.split(" ")[1];
@@ -162,7 +164,7 @@ exports.markAttendance = async (req, res) => {
     await attendance.save();
     res
       .status(201)
-      .json({ message: "Attendance marked successfully", attendance });
+      .json({ message: "Attendance marked successfully", attendance, studentName });
   } catch (error) {
     res.status(500).json({ message: "Error marking attendance", error: error.message || error});
   }
@@ -382,6 +384,21 @@ exports.getEvent = async (req, res) => {
   } catch (error) {
     console.error("Error getting events:", error); // Log for debugging
     return res.status(500).json({ message: "Error getting events", error: error.message });
+  }
+};
+
+exports.getNotice = async (req, res) => {
+  try {
+    // Get the current date
+    const currentDate = new Date();
+
+    // Find only upcoming events (date is in the future)
+    const upcomingNotice = await Notice.find({ date: { $gt: currentDate } }).sort({ date: 1 });
+
+    return res.status(200).json(upcomingNotice);
+  } catch (error) {
+    console.error("Error getting notice:", error); // Log for debugging
+    return res.status(500).json({ message: "Error getting notice", error: error.message });
   }
 };
 

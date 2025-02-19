@@ -21,7 +21,11 @@ const {
   createEvent,
   updateEvent,
   deleteEvent,
-  getEvent
+  getEvent,
+  createNotice,
+  updateNotice,
+  deleteNotice,
+  getNotice
 } = require("../controllers/superAdmin.controller");
 const { protect, authorize } = require("../middlewares/authMiddleware");
 
@@ -50,7 +54,11 @@ router.post("/updateTeacher/:teacherId", updateTeacher);
 router.post("/createEvent", createEvent);
 router.patch("/updateEvent/:id", updateEvent );
 router.delete("/deleteEvent/:id", deleteEvent);
-router.get("/getAllEvent", getEvent)
+router.get("/getAllEvent", getEvent);
+router.post("/createNotice", createNotice);
+router.patch("/updateNotice/:id", updateNotice );
+router.delete("/deleteNotice/:id", deleteNotice);
+router.get("/getAllNotice", getNotice)
 // Additional SuperAdmin routes can be added here...
 
 module.exports = router;

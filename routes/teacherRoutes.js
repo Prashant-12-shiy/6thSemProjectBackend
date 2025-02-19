@@ -13,10 +13,13 @@ const {
   getStudentById,
   assignedTask,
   updateTask,
-  getEvent
+  getEvent,
+  getNotice
 } = require("../controllers/teacher.controller");
 const { protect, authorize } = require("../middlewares/authMiddleware");
 
+router.get('/getEvent', getEvent)
+router.get("/getNotice", getNotice);
 // Apply middleware to protect routes and restrict access to Teacher/Admin roles
 router.use(protect);
 router.use(authorize("Teacher"));
@@ -33,7 +36,6 @@ router.get('/getStudentGrade/:studentId', getStudentGrade);
 router.post('/addTask', addTask);
 router.get('/assignedTask', assignedTask)
 router.post('/updateTask/:taskId', updateTask)
-router.get('/getEvent', getEvent)
 // Additional Teacher(Admin) routes can be added here...
 
 module.exports = router;
