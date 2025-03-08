@@ -15,6 +15,7 @@ const app = express();
 const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:3001', // For local development
+    'https://4th-sem-project-frontend.vercel.app'
   ];
   
   app.use(cors({
