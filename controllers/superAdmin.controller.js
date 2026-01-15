@@ -116,6 +116,11 @@ exports.createTeacher = async (req, res) => {
 
     if (classDoc && courseDoc) {
       // console.log("Updating class and course with teacher reference");
+      if (classDoc.teacherInCharge) {
+        return res.status(409).json({
+          message: "This class already has a teacher assigned"
+        })
+      }
       classDoc.teacherInCharge = teacher._id;
       await classDoc.save();
 
@@ -282,6 +287,12 @@ exports.updateTeacher = async (req, res) => {
       if (!classDoc) {
         return res.status(404).json({ message: "Class not found" });
       }
+
+      if (classDoc.teacherInCharge) {
+        return res.status(409).json({
+      message: "This class already has a teacher assigned",
+        })
+      }
     }
 
     let course;
@@ -290,6 +301,12 @@ exports.updateTeacher = async (req, res) => {
 
       if (!course) {
         return res.status(404).json({ message: "Couse not found" });
+      }
+
+      if(course.teacher) {
+        return res.status(409).json({
+          message: "Teacher is already assigend to this course"
+        })
       }
     }
 

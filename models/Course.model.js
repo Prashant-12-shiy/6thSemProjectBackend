@@ -21,7 +21,8 @@ const courseNames = [
     "Optional Mathematics",
     "Environment Science",
     "Sanskrit",
-    "Physical Education"
+    "Physical Education",
+    "Science"
 ];
 
 const courseSchema = mongoose.Schema(
