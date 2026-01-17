@@ -15,7 +15,7 @@ exports.createStudent = async (req, res) => {
     password,
     role,
     rollNumber,
-    profilePicture,
+    // profilePicture,
     className,
     guardianName,
     guardianContact,
@@ -50,7 +50,7 @@ exports.createStudent = async (req, res) => {
       email: email,
       password: password,
       role: role,
-      profilePicture,
+      // profilePicture,π
       class: classDoc._id,
       rollNumber,
       guardianName,
@@ -118,8 +118,8 @@ exports.createTeacher = async (req, res) => {
       // console.log("Updating class and course with teacher reference");
       if (classDoc.teacherInCharge) {
         return res.status(409).json({
-          message: "This class already has a teacher assigned"
-        })
+          message: "This class already has a teacher assigned",
+        });
       }
       classDoc.teacherInCharge = teacher._id;
       await classDoc.save();
@@ -281,19 +281,42 @@ exports.updateTeacher = async (req, res) => {
     }
 
     let classDoc;
-    if (classInCharge) {
-      classDoc = await Class.findOne({ name: classInCharge });
+// Handle class in charge update
+if (classInCharge) {
+  // Find new class
+  const newClass = await Class.findOne({ name: classInCharge });
+  if (!newClass) {
+    return res.status(404).json({ message: "Class not found" });
+  }
 
-      if (!classDoc) {
-        return res.status(404).json({ message: "Class not found" });
-      }
+  // Find old class where teacher was in charge
+  const oldClass = await Class.findOne({
+    teacherInCharge: teacherId,
+  });
 
-      if (classDoc.teacherInCharge) {
-        return res.status(409).json({
+  // If teacher was already assigned to another class, remove them
+  if (oldClass && oldClass._id.toString() !== newClass._id.toString()) {
+    oldClass.teacherInCharge = null;
+    await oldClass.save();
+  }
+
+  // Check if new class already has a different teacher
+  if (
+    newClass.teacherInCharge &&
+    newClass.teacherInCharge.toString() !== teacherId
+  ) {
+    return res.status(409).json({
       message: "This class already has a teacher assigned",
-        })
-      }
-    }
+    });
+  }
+
+  // Assign teacher to new class
+  newClass.teacherInCharge = teacherId;
+  teacher.classInCharge = newClass._id;
+
+  await newClass.save();
+}
+
 
     let course;
     if (courseName) {
@@ -303,10 +326,10 @@ exports.updateTeacher = async (req, res) => {
         return res.status(404).json({ message: "Couse not found" });
       }
 
-      if(course.teacher) {
+      if (course.teacher != teacherId) {
         return res.status(409).json({
-          message: "Teacher is already assigend to this course"
-        })
+          message: "Teacher is already assigend to this course",
+        });
       }
     }
 
@@ -314,9 +337,12 @@ exports.updateTeacher = async (req, res) => {
     if (email) teacher.email = email;
     if (password) teacher.password = password;
     if (classDoc) teacher.classInCharge = classDoc._id;
+    // if (classDoc) classDoc.teacherInCharge = teacherId;
+
     if (course) teacher.course = course._id;
 
     await teacher.save();
+    // await classDoc.save();
 
     if (course) {
       course.teacher = teacher._id;
@@ -326,7 +352,7 @@ exports.updateTeacher = async (req, res) => {
     res.status(200).json({ message: "Teacher updated successfully", teacher });
   } catch (error) {
     res.status(500).json({
-      message: "Error updating student",
+      message: "Error updating Teacher",
       error: error.message || error,
     });
   }
@@ -467,7 +493,9 @@ exports.getAllCourse = async (req, res) => {
   }
 
   try {
-    const courses = await Course.find({}).populate("teacher", "name").populate("classes", "name");
+    const courses = await Course.find({})
+      .populate("teacher", "name")
+      .populate("classes", "name");
     return res.status(200).json(courses);
   } catch (error) {
     return res
@@ -476,14 +504,15 @@ exports.getAllCourse = async (req, res) => {
   }
 };
 
-
 exports.getCourseBySuperAdmin = async (req, res) => {
   if (req.user.role !== "SuperAdmin") {
     return res.status(403).json({ message: "Access denied" });
   }
   const id = req.params.courseId;
   try {
-    const course = await Course.findById(id).populate("teacher", "name").populate("classes", "name");
+    const course = await Course.findById(id)
+      .populate("teacher", "name")
+      .populate("classes", "name");
     if (!course) {
       return res.status(400).json({
         message: `Course doesnot exists in class ${className}`,
@@ -655,7 +684,6 @@ exports.deleteEvent = async (req, res) => {
   }
 };
 // Other SuperAdmin-specific actions can be added here...
-
 
 exports.createNotice = async (req, res) => {
   if (req.user.role !== "SuperAdmin") {
