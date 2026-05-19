@@ -350,6 +350,10 @@ exports.addTask = async (req, res) => {
   try {
     const assignedDoc = await Class.findOne({ name: assignedTo });
 
+    if (!assignedDoc) {
+      return res.status(404).json({ message: "Class not found" });
+    }
+
     const task = new Task({
       taskContent: taskContent,
       status,
@@ -385,12 +389,18 @@ exports.updateTask = async (req, res) => {
   const { taskId } = req.params;
   const { taskContent, assignedTo, status } = req.body;
   try {
-    const assignedDoc = await Class.findOne({ name: assignedTo });
+    let assignedDoc;
+    if (assignedTo) {
+      assignedDoc = await Class.findOne({ name: assignedTo });
+      if (!assignedDoc) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+    }
 
     const task = await Task.findById(taskId);
 
     if (taskContent) task.taskContent = taskContent;
-    if (assignedTo) task.assignedTo = assignedDoc._id;
+    if (assignedDoc) task.assignedTo = assignedDoc._id;
     if (status) task.status = status;
 
     await task.save();
@@ -437,6 +447,15 @@ exports.getNotice = async (req, res) => {
     return res
       .status(500)
       .json({ message: "Error getting notice", error: error.message });
+  }
+};
+
+exports.getAllClasses = async (req, res) => {
+  try {
+    const classes = await Class.find({}).populate("teacherInCharge", "name");
+    return res.status(200).json(classes);
+  } catch (error) {
+    return res.status(500).json({ message: "Error fetching classes", error });
   }
 };
 

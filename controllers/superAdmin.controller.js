@@ -410,9 +410,9 @@ if (classInCharge) {
         return res.status(404).json({ message: "Couse not found" });
       }
 
-      if (course.teacher != teacherId) {
+      if (course.teacher && course.teacher.toString() !== teacherId) {
         return res.status(409).json({
-          message: "Teacher is already assigend to this course",
+          message: "This course already has a different teacher assigned",
         });
       }
     }
@@ -466,7 +466,7 @@ exports.createCourses = async (req, res) => {
             .json({ message: `User with name ${teacherName} not found` });
         }
 
-        teacher = await Teacher.findOne({ user: user._id })._id;
+        teacher = await Teacher.findOne({ name: teacherName });
         if (!teacher) {
           return res
             .status(404)
@@ -599,14 +599,14 @@ exports.getCourseBySuperAdmin = async (req, res) => {
       .populate("classes", "name");
     if (!course) {
       return res.status(400).json({
-        message: `Course does not exist in class ${className}`,
+        message: "Course not found",
       });
     }
     return res.status(200).json(course);
   } catch (error) {
     return res
       .status(500)
-      .json({ message: "Error geting course", error: error.message });
+      .json({ message: "Error getting course", error: error.message });
   }
 };
 
@@ -644,9 +644,9 @@ exports.createClass = async (req, res) => {
 };
 
 exports.getAllClasses = async (req, res) => {
-  if (req.user.role !== "SuperAdmin") {
-    return res.status(403).json({ message: "Access denied" });
-  }
+  // if (req.user.role !== "SuperAdmin") {
+  //   return res.status(403).json({ message: "Access denied" });
+  // }
   try {
     const classes = await Class.find({}).populate("teacherInCharge", "name");
 

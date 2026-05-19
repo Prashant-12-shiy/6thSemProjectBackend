@@ -14,7 +14,8 @@ const {
   assignedTask,
   updateTask,
   getEvent,
-  getNotice
+  getNotice,
+  getAllClasses,
 } = require("../controllers/teacher.controller");
 const { protect, authorize } = require("../middlewares/authMiddleware");
 
@@ -36,6 +37,7 @@ router.get('/getStudentGrade/:studentId', getStudentGrade);
 router.post('/addTask', addTask);
 router.get('/assignedTask', assignedTask)
 router.post('/updateTask/:taskId', updateTask)
+router.get('/classes', getAllClasses)
 // Additional Teacher(Admin) routes can be added here...
 
 module.exports = router;

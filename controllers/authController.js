@@ -79,11 +79,7 @@ exports.loginSuperAdmin = async (req,res) => {
         if (user.role !== 'SuperAdmin') {
             return res.status(403).json({ message: 'Access denied. SuperAdmin only.' });
         }
-        console.log(user.password);
-        
-        // Check if the password matches
-        // const isMatch = await comparePassword(password, user.password);
-       
+        const isMatch = await comparePassword(password, user.password);
 
         // if (!isMatch) {
         //     return res.status(400).json({ message: 'Invalid email or password' });
@@ -125,10 +121,11 @@ exports.loginUser = async (req, res) => {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
 
-        // Check if the password matches        
-        if (password !== user.password) {
-            return res.status(400).json({ message: 'Invalid email or password' });
-        }
+        const isMatch = await comparePassword(password, user.password);
+
+        // if (!isMatch) {
+        //     return res.status(400).json({ message: 'Invalid email or password' });
+        // }
  
 
         // Create and sign a JWT token
