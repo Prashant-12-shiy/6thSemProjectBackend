@@ -6,6 +6,10 @@ const Course = require("../models/Course.model");
 const Class = require("../models/Class.model");
 const Event = require("../models/Event.model");
 const Notice = require("../models/Notice.model");
+const Attendance = require("../models/Attendance.model");
+const Grade = require("../models/Grade.model");
+const FeeStructure = require("../models/FeeStructure.model");
+const FeePayment = require("../models/FeePayment.model");
 
 // Create a new user (Admin, Teacher, Student)
 exports.createStudent = async (req, res) => {
@@ -147,7 +151,9 @@ exports.getAllStudent = async (req, res) => {
   }
 
   try {
-    const users = await Student.find({}).populate("class", "name");
+    const users = await Student.find({})
+      .select("-password")
+      .populate("class", "name section");
     res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ message: "Error fetching users", error });
@@ -177,8 +183,86 @@ exports.getStudent = async (req, res) => {
 
   try {
     const id = req.params.id;
-    const users = await Student.findById(id).populate("class", "name");
-    res.status(200).json(users);
+    const student = await Student.findById(id)
+      .select("-password")
+      .populate({
+        path: "class",
+        select: "name section teacherInCharge",
+        populate: {
+          path: "teacherInCharge",
+          select: "name email",
+        },
+      })
+      .lean();
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    const [attendance, grades, courses, feeStructure, payments] =
+      await Promise.all([
+        Attendance.find({ student: id }).sort({ date: -1 }).lean(),
+        Grade.find({ student: id })
+          .populate({
+            path: "course",
+            select: "name code credits teacher",
+            populate: {
+              path: "teacher",
+              select: "name email",
+            },
+          })
+          .lean(),
+        Course.find({ classes: student.class?._id })
+          .populate("teacher", "name email")
+          .lean(),
+        FeeStructure.findOne({ class: student.class?._id }).lean(),
+        FeePayment.find({ student: id })
+          .sort({ year: -1, month: -1, createdAt: -1 })
+          .lean(),
+      ]);
+
+    const totalAttendance = attendance.length;
+    const presentDays = attendance.filter(
+      (record) => record.status === "Present"
+    ).length;
+    const lateDays = attendance.filter((record) => record.status === "Late")
+      .length;
+    const absentDays = attendance.filter((record) => record.status === "Absent")
+      .length;
+    const completedPayments = payments.filter(
+      (payment) => payment.status === "COMPLETE"
+    );
+    const totalPaid = completedPayments.reduce(
+      (total, payment) => total + Number(payment.amount || 0),
+      0
+    );
+
+    res.status(200).json({
+      student,
+      class: student.class,
+      attendance,
+      attendanceSummary: {
+        totalDays: totalAttendance,
+        presentDays,
+        lateDays,
+        absentDays,
+        percentage:
+          totalAttendance > 0
+            ? Number(((presentDays / totalAttendance) * 100).toFixed(2))
+            : 0,
+      },
+      grades,
+      courses,
+      feeStructure,
+      payments,
+      feeSummary: {
+        monthlyFee: feeStructure?.monthlyFee || 0,
+        currency: feeStructure?.currency || "NPR",
+        totalPaid,
+        paidCount: completedPayments.length,
+        latestPayment: payments[0] || null,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: "Error fetching users", error });
   }
@@ -442,7 +526,7 @@ exports.createCourses = async (req, res) => {
   }
 };
 
-exports.updateCouse = async (req, res) => {
+exports.updateCourse = async (req, res) => {
   try {
     const id = req.params.id;
     const { name, code, description, credits, className } = req.body;
@@ -461,7 +545,7 @@ exports.updateCouse = async (req, res) => {
     const course = await Course.findById(id);
     if (!course) {
       return res.status(400).json({
-        message: `Course doesnot exists in class ${className}`,
+        message: `Course does not exist in class ${className}`,
       });
     }
 
@@ -515,7 +599,7 @@ exports.getCourseBySuperAdmin = async (req, res) => {
       .populate("classes", "name");
     if (!course) {
       return res.status(400).json({
-        message: `Course doesnot exists in class ${className}`,
+        message: `Course does not exist in class ${className}`,
       });
     }
     return res.status(200).json(course);
@@ -732,12 +816,12 @@ exports.updateNotice = async (req, res) => {
     const { name, date, description } = req.body;
     const noticeId = req.params.id;
 
-    const notice = await Event.findById(noticeId);
+    const notice = await Notice.findById(noticeId);
     if (!notice) {
       return res.status(404).json({ message: "Notice not found" });
     }
 
-    const updatedNotice = await Event.findByIdAndUpdate(
+    const updatedNotice = await Notice.findByIdAndUpdate(
       noticeId,
       {
         ...(name && { name }),

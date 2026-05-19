@@ -13,7 +13,7 @@ const {
   updateTeacher,
   getAllCourse,
   getCourseBySuperAdmin,
-  updateCouse,
+  updateCourse,
   createStudent,
   createTeacher,
   getAllClasses,
@@ -27,6 +27,11 @@ const {
   deleteNotice,
   getNotice
 } = require("../controllers/superAdmin.controller");
+const {
+  getFeeStructures,
+  setFeeStructure,
+  getFeePayments,
+} = require("../controllers/fee.controller");
 const { protect, authorize } = require("../middlewares/authMiddleware");
 
 // Apply middleware to protect routes and restrict access to SuperAdmin only
@@ -44,7 +49,7 @@ router.get("/getAllTeacher", getAllTeacher);
 router.post("/createCourses", createCourses);
 router.get("/getAllCourse", getAllCourse);
 router.get("/getCourse/:courseId", getCourseBySuperAdmin)
-router.patch("/updateCourse/:id", updateCouse)
+router.patch("/updateCourse/:id", updateCourse)
 router.delete("/deleteClass/:id", deleteClass);
 router.post("/createClass", createClass);
 router.get("/getAllClass", getAllClasses)
@@ -59,6 +64,9 @@ router.post("/createNotice", createNotice);
 router.patch("/updateNotice/:id", updateNotice );
 router.delete("/deleteNotice/:id", deleteNotice);
 router.get("/getAllNotice", getNotice)
+router.get("/fee-structures", getFeeStructures);
+router.post("/fee-structures", setFeeStructure);
+router.get("/fee-payments", getFeePayments);
 // Additional SuperAdmin routes can be added here...
 
 module.exports = router;
